@@ -1,7 +1,7 @@
 # PM-Track: A Positional-Aware Multi-Scale Tracker for Multi-Object Tracking
 
 
-
+Here is the repository for PMTrack, and the project is built based on [MMDet](https://github.com/open-mmlab/mmdetection).
 
 The core code of this project is in `./PMTrack/`.
 
