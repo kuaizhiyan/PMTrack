@@ -732,6 +732,125 @@ class ConditionalAttention(BaseModule):
 
         return query
 
+class MyConditionalAttention(ConditionalAttention):
+    """A wrapper of conditional  attention, dropout and residual connection.
+
+    Args:
+        embed_dims (int): The embedding dimension.
+        num_heads (int): Parallel attention heads.
+        attn_drop (float): A Dropout layer on attn_output_weights.
+            Default: 0.0.
+        proj_drop: A Dropout layer after `nn.MultiheadAttention`.
+            Default: 0.0.
+        cross_attn (bool): Whether the attention module is for cross attention.
+            Default: False
+        keep_query_pos (bool): Whether to transform query_pos before cross
+            attention.
+            Default: False.
+        batch_first (bool): When it is True, Key, Query and Value are shape of
+            (batch, n, embed_dim), otherwise (n, batch, embed_dim).
+             Default: True.
+        init_cfg (obj:`mmcv.ConfigDict`): The Config for initialization.
+            Default: None.
+    """
+
+    def forward(self,
+                query: Tensor,
+                key: Tensor,
+                query_pos: Tensor = None,
+                ref_sine_embed: Tensor = None,
+                key_pos: Tensor = None,
+                attn_mask: Tensor = None,
+                key_padding_mask: Tensor = None,
+                is_first: bool = False) -> Tensor:
+        """Forward function for `ConditionalAttention`.
+        Args:
+            query (Tensor): The input query with shape [bs, num_queries,
+                embed_dims].
+            key (Tensor): The key tensor with shape [bs, num_keys,
+                embed_dims].
+                If None, the `query` will be used. Defaults to None.
+            query_pos (Tensor): The positional encoding for query in self
+                attention, with the same shape as `x`. If not None, it will
+                be added to `x` before forward function.
+                Defaults to None.
+            query_sine_embed (Tensor): The positional encoding for query in
+                cross attention, with the same shape as `x`. If not None, it
+                will be added to `x` before forward function.
+                Defaults to None.
+            key_pos (Tensor): The positional encoding for `key`, with the
+                same shape as `key`. Defaults to None. If not None, it will
+                be added to `key` before forward function. If None, and
+                `query_pos` has the same shape as `key`, then `query_pos`
+                will be used for `key_pos`. Defaults to None.
+            attn_mask (Tensor): ByteTensor mask with shape [num_queries,
+                num_keys]. Same in `nn.MultiheadAttention.forward`.
+                Defaults to None.
+            key_padding_mask (Tensor): ByteTensor with shape [bs, num_keys].
+                Defaults to None.
+            is_first (bool): A indicator to tell whether the current layer
+                is the first layer of the decoder.
+                Defaults to False.
+        Returns:
+            Tensor: forwarded results with shape
+            [bs, num_queries, embed_dims].
+        """
+
+        if self.cross_attn:
+            q_content = self.qcontent_proj(query)   # q_content,query[32,128,256] 
+            k_content = self.kcontent_proj(key)     # k_content,key[32,672,256]
+            v = self.v_proj(key)    # v[32,672,256]
+
+            bs, nq, c = q_content.size()
+            _, hw, _ = k_content.size()
+
+            k_pos = self.kpos_proj(key_pos) # k_pos [32,32,256]
+            if is_first or self.keep_query_pos:
+                q_pos = self.qpos_proj(query_pos)
+                q = q_content + q_pos
+                k = k_content + k_pos
+            else:
+                q = q_content
+                k = k_content
+            q = q.view(bs, nq, self.num_heads, c // self.num_heads)
+            query_sine_embed = self.qpos_sine_proj(ref_sine_embed)  # [1,256,256]
+            query_sine_embed = query_sine_embed.view(bs, nq, self.num_heads,
+                                                     c // self.num_heads)
+            q = torch.cat([q, query_sine_embed], dim=3).view(bs, nq, 2 * c)
+            k = k.view(bs, hw, self.num_heads, c // self.num_heads) # 64 32 256
+            k_pos = k_pos.view(bs, hw, self.num_heads, c // self.num_heads) # 64 32 8 32
+            k = torch.cat([k, k_pos], dim=3).view(bs, hw, 2 * c)#
+            ca_output,ca_pos_attention = self.forward_attn(
+                query=q,
+                key=k,
+                value=v,
+                attn_mask=attn_mask,
+                key_padding_mask=key_padding_mask)
+            query = query + self.proj_drop(ca_output)
+            
+            # squeeze_q = query_sine_embed.view(bs,-1,query_sine_embed.shape[-1]) # 64 264 32
+            # squeeze_k = k_pos.view(bs,-1,k_pos.shape[-1])# 64 256 32
+            # ca_pos_attention = torch.bmm(squeeze_q,squeeze_k.transpose(1,2))    # 64 264 256
+            # ca_pos_attention = F.softmax(ca_pos_attention
+            # -ca_pos_attention.max(dim=-1,keepdim=True)[0],dim=-1)
+            
+        else:
+            q_content = self.qcontent_proj(query)   # 32 33 256 -》 32 33 256
+            q_pos = self.qpos_proj(query_pos)
+            k_content = self.kcontent_proj(query)
+            k_pos = self.kpos_proj(query_pos)
+            v = self.v_proj(query)
+            q = q_content if q_pos is None else q_content + q_pos
+            k = k_content if k_pos is None else k_content + k_pos
+            sa_output,ca_pos_attention = self.forward_attn(     # ca\ 64 33 33
+                query=q,
+                key=k,
+                value=v,
+                attn_mask=attn_mask,
+                key_padding_mask=key_padding_mask)
+            query = query + self.proj_drop(sa_output)
+            # ca_pos_attention = None
+        return query ,ca_pos_attention
 
 class MLP(BaseModule):
     """Very simple multi-layer perceptron (also called FFN) with relu. Mostly

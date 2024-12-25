@@ -111,11 +111,11 @@ class LinearReIDHead(BaseModule):
         """The forward process."""
         # Multiple stage inputs are acceptable
         # but only the last stage will be used.
-        feats = feats[-1]
+        feats = feats[-1] # 0=([32,2048])
 
         for m in self.fcs:
             feats = m(feats)
-        feats = self.fc_out(feats)
+        feats = self.fc_out(feats)  # [32,1024]->[32,128]
         return feats
 
     def loss(self, feats: Tuple[torch.Tensor],
@@ -131,7 +131,7 @@ class LinearReIDHead(BaseModule):
             dict: a dictionary of loss components
         """
         # The part can be traced by torch.fx
-        feats = self(feats)
+        feats = self(feats) #2([256,256])
 
         # The part can not be traced by torch.fx
         losses = self.loss_by_feat(feats, data_samples)

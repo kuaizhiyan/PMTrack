@@ -6,7 +6,8 @@ from torch import Tensor
 from torch.nn import ModuleList
 
 from .detr_layers import DetrTransformerDecoder, DetrTransformerDecoderLayer
-from .utils import MLP, ConditionalAttention, coordinate_to_encoding
+from .utils import MLP, ConditionalAttention, coordinate_to_encoding,MyConditionalAttention
+
 
 
 class ConditionalDetrTransformerDecoder(DetrTransformerDecoder):
@@ -168,3 +169,98 @@ class ConditionalDetrTransformerDecoderLayer(DetrTransformerDecoderLayer):
         query = self.norms[2](query)
 
         return query
+
+class MyConditionalDetrTransformerDecoderLayer(ConditionalDetrTransformerDecoderLayer):
+    """Implements decoder layer in Conditional DETR transformer."""
+
+    def _init_layers(self):
+        """Initialize self-attention, cross-attention, FFN, and
+        normalization."""
+        self.self_attn = MyConditionalAttention(**self.self_attn_cfg)
+        self.cross_attn = MyConditionalAttention(**self.cross_attn_cfg)
+        self.embed_dims = self.self_attn.embed_dims
+        self.ffn = FFN(**self.ffn_cfg)
+        norms_list = [
+            build_norm_layer(self.norm_cfg, self.embed_dims)[1]
+            for _ in range(3)
+        ]
+        self.norms = ModuleList(norms_list)
+
+    def forward(self,
+                query: Tensor,
+                key: Tensor = None,
+                query_pos: Tensor = None,
+                key_pos: Tensor = None,
+                self_attn_masks: Tensor = None,
+                cross_attn_masks: Tensor = None,
+                key_padding_mask: Tensor = None,
+                ref_sine_embed: Tensor = None,
+                is_first: bool = False):
+
+        query,_ = self.self_attn(
+            query=query,
+            key=query,
+            query_pos=query_pos,
+            key_pos=query_pos,
+            attn_mask=self_attn_masks)
+        query = self.norms[0](query)
+        query,ca_pos_attention_score = self.cross_attn(
+            query=query,
+            key=key,
+            query_pos=query_pos,
+            key_pos=key_pos,
+            attn_mask=cross_attn_masks,
+            key_padding_mask=key_padding_mask,
+            ref_sine_embed=ref_sine_embed,
+            is_first=is_first)
+        query = self.norms[1](query)
+        query = self.ffn(query) # 128,257,768
+        query = self.norms[2](query)
+
+        return query,ca_pos_attention_score
+
+class MyConditionalDetrTransformerDecoder(DetrTransformerDecoder):
+    """Decoder of Conditional DETR."""
+
+    def _init_layers(self) -> None:
+        """Initialize decoder layers and other layers."""
+        self.layers = ModuleList([
+            MyConditionalDetrTransformerDecoderLayer(**self.layer_cfg)
+            for _ in range(self.num_layers)
+        ])
+        self.embed_dims = self.layers[0].embed_dims
+        self.post_norm = build_norm_layer(self.post_norm_cfg,
+                                          self.embed_dims)[1]
+        # conditional detr affline
+        self.query_scale = MLP(self.embed_dims, self.embed_dims,
+                               self.embed_dims, 2)
+        self.ref_point_head = MLP(self.embed_dims, self.embed_dims, 2, 2)
+        # we have substitute 'qpos_proj' with 'qpos_sine_proj' except for
+        # the first decoder layer), so 'qpos_proj' should be deleted
+        # in other layers.
+        for layer_id in range(self.num_layers - 1):
+            self.layers[layer_id + 1].cross_attn.qpos_proj = None
+    
+    def forward(self, query: Tensor, key: Tensor, value: Tensor,
+                query_pos: Tensor, key_pos: Tensor, key_padding_mask: Tensor,
+                **kwargs) -> Tensor:
+        intermediate = []
+        ca_pos_att_socre_layers = []
+        for layer in self.layers:
+            query,ca_pos_att_socre = layer(
+                query,
+                key=key,
+                value=value,
+                query_pos=query_pos,
+                key_pos=key_pos,
+                key_padding_mask=key_padding_mask,
+                **kwargs)
+            if self.return_intermediate:
+                intermediate.append(self.post_norm(query))
+                ca_pos_att_socre_layers.append(ca_pos_att_socre)
+        query = self.post_norm(query)
+
+        if self.return_intermediate:
+            return torch.stack(intermediate),ca_pos_att_socre_layers
+
+        return query.unsqueeze(0),ca_pos_att_socre_layers

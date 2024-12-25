@@ -17,11 +17,17 @@ from .resnext import ResNeXt
 from .ssd_vgg import SSDVGG
 from .swin import SwinTransformer
 from .trident_resnet import TridentResNet
+from .part_decoder import PDNet
+from .pamstransformer import PMNet
 
+# custom_imports = dict(
+#     imports=['mmdet.models.backbones.PDNet'],
+#     allow_failed_imports=False
+# )
 __all__ = [
     'RegNet', 'ResNet', 'ResNetV1d', 'ResNeXt', 'SSDVGG', 'HRNet',
     'MobileNetV2', 'Res2Net', 'HourglassNet', 'DetectoRS_ResNet',
     'DetectoRS_ResNeXt', 'Darknet', 'ResNeSt', 'TridentResNet', 'CSPDarknet',
     'SwinTransformer', 'PyramidVisionTransformer',
-    'PyramidVisionTransformerV2', 'EfficientNet', 'CSPNeXt'
+    'PyramidVisionTransformerV2', 'EfficientNet', 'CSPNeXt','PDNet','PMNet'
 ]

@@ -63,7 +63,7 @@ class FcModule(BaseModule):
 
     def forward(self, x, activate=True, norm=True):
         """Model forward."""
-        x = self.fc(x)
+        x = self.fc(x)  # [4,256,129,32]
         if norm and self.with_norm:
             x = self.norm(x)
         if activate and self.with_activation:
