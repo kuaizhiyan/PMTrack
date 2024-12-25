@@ -2,6 +2,7 @@ _base_ = [
     '../_base_/datasets/mot_challenge_reid.py', '../_base_/default_runtime.py'
 ]
 num_queries=129
+embed_dims=256
 model = dict(
     type='BaseReID',
     data_preprocessor=dict(
@@ -17,33 +18,54 @@ model = dict(
         style='pytorch',
         ),
     neck=dict(
-        type='PMNet',
-            num_queries=129,
-            embed_dims=256,
-            with_agg=True,
-            channel_mapper=dict(
-                in_channels=[512,1024,2048],   # the output feature map dim
-                out_channels=256,
-                kernel_size=1,
-                norm_cfg=dict(type='BN'),
-                act_cfg=dict(type='LeakyReLU')
-                ),
-            decoder=dict(
-                num_layers=4,
-                layer_cfg=dict(
-                    self_attn_cfg=dict(
-                        embed_dims=256,
-                        num_heads=8,
-                        attn_drop=0.1,
-                        cross_attn=False),
-                    cross_attn_cfg=dict(
-                        embed_dims=256,
-                        num_heads=8,
-                        attn_drop=0.1,
-                        cross_attn=True))
+    type='PMNet',
+        num_queries=129,
+        embed_dims=embed_dims,
+        with_agg=True,
+        with_encoder=False,
+        channel_mapper=dict(
+            in_channels=[512,1024,2048],   # the output feature map dim
+            out_channels=embed_dims,
+            kernel_size=1,
+            norm_cfg=dict(type='BN'),
+            act_cfg=dict(type='LeakyReLU')
             ),
-            positional_encoding=dict(num_feats=128, normalize=True),    # num_feats = len(x)+len(y)
-    ),
+        encoder=dict(  
+            num_layers=4,
+            layer_cfg=dict(  
+                self_attn_cfg=dict(  # MultiheadAttention
+                    embed_dims=embed_dims,
+                    num_heads=8,
+                    dropout=0.1,
+                    batch_first=True),
+                ffn_cfg=dict(
+                    embed_dims=embed_dims,
+                    feedforward_channels=2048,
+                    num_fcs=2,
+                    ffn_drop=0.1,
+                    act_cfg=dict(type='ReLU', inplace=True)))),
+        decoder=dict(
+            num_layers=4,
+            layer_cfg=dict(
+                self_attn_cfg=dict(
+                    embed_dims=embed_dims,
+                    num_heads=8,
+                    attn_drop=0.1,
+                    cross_attn=False),
+                cross_attn_cfg=dict(
+                    embed_dims=embed_dims,
+                    num_heads=8,
+                    attn_drop=0.1,
+                    cross_attn=True),
+                ffn_cfg=dict(
+                    embed_dims=embed_dims,
+                    feedforward_channels=2048,
+                    num_fcs=2,
+                    ffn_drop=0.1,
+                    act_cfg=dict(type='ReLU', inplace=True))),       
+        ),
+        positional_encoding=dict(num_feats=128, normalize=True),    # num_feats = len(x)+len(y)
+),
     head=dict(
         type='LinearReIDHead',
         num_fcs=1,

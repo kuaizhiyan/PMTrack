@@ -1,9 +1,9 @@
-# FARE: A Finer-grained and Fast Converging Appearance Representation Extractor in MOT
+# PM-Track: A Positional-Aware Multi-Scale Tracker for Multi-Object Tracking
 
 
-This is an **anonymized repository** for ECCV2024, where all personal information is already hidden.
 
-The core code of this project is in `./FARE/`.
+
+The core code of this project is in `./PMTrack/`.
 
 
 # Abstract
@@ -43,8 +43,8 @@ mim install "mmcv>=2.0.0"
 Install the project to local environment.
 
 ```bash
-git clone https://anonymous.4open.science/r/FARE-ECCV-5110
-cd FARE-ECCV-5110
+git clone https://github.com/kuaizhiyan/PMTrack.git
+cd PMTrack
 pip install -v -e . -r requirements/tracking.txt
 ```
 **Step 2.** Install TrackEval.
@@ -98,18 +98,18 @@ PDTrack
 
 Train FARE with 1 GPU on MOT17:
 ```
-python tools/train.py ./FARE/configs/reid_PartDecoder_4xb32-2000iter_mot17train80_test-mot17val20.py --work-dir ./experiments
+python tools/train.py ./configs/reid_pmnet_4xb32_14000iter_mot17train80_test-mot17val20.py --work-dir ./experiments
 ```
 
 
 Train FARE with 4 GPUs on MOT17:
 ```
-sh tools/dist_train.sh ./FARE/configs/reid_PartDecoder_4xb32-2000iter_mot17train80_test-mot17val20.py 4 --work-dir ./experiments
+sh tools/dist_train.sh ./configs/reid_pmnet_4xb32_14000iter_mot17train80_test-mot17val20.py 4 --work-dir ./experiments
 ```
 
 Train FARE with 4 GPUs on MOT20:
 ```
-sh tools/dist_train.sh ./FARE/configs/reid_PartDecoder_4xb32-2000iter_mot20train80_test-mot20val20.py 4 --work-dir ./experiments
+sh tools/dist_train.sh ./configs/reid_pmnet_4xb32_14000iter_mot20train80_test-mot20val20.py 4 --work-dir ./experiments
 ```
 
 Train extral detector with 8 GPUs on crowdhuman:
