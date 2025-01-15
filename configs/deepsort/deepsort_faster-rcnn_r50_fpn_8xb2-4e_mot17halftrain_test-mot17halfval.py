@@ -3,6 +3,8 @@ _base_ = [
     '../_base_/datasets/mot_challenge.py', '../_base_/default_runtime.py'
 ]
 
+dataset_type='MOTChallengeDataset'
+data_root='data/MOT17'
 default_hooks = dict(
     logger=dict(type='LoggerHook', interval=1),
     visualization=dict(type='TrackVisualizationHook', draw=False))
@@ -83,3 +85,58 @@ train_dataloader = None
 train_cfg = None
 val_cfg = dict(type='ValLoop')
 test_cfg = dict(type='TestLoop')
+
+test_pipeline = [
+    dict(
+        type='TransformBroadcaster',
+        transforms=[
+            dict(type='LoadImageFromFile', backend_args=_base_.backend_args),
+            dict(type='Resize', scale=_base_.img_scale, keep_ratio=True),
+            dict(
+                type='Pad',
+                size_divisor=32,
+                pad_val=dict(img=(114.0, 114.0, 114.0))),
+            dict(type='LoadTrackAnnotations'),
+        ]),
+    dict(type='PackTrackInputs')
+]
+# test_dataloader = dict(
+#     # Now StrongSORT only support video_based sampling
+#     sampler=dict(type='DefaultSampler', shuffle=False, round_up=False),
+#     dataset=dict(
+#         _delete_=True,
+#         # batch_size=1,  # 适当调整批量大小
+#         # num_workers=2,  # 适当调整线程数
+#         # persistent_workers=False,  # 避免在多线程环境下占用显存
+#         type='MOTChallengeDataset',
+#         data_root='data/MOT17',
+#         ann_file='annotations/test_cocoformat.json',
+#         data_prefix=dict(img_path='test'),
+#         # when you evaluate track performance, you need to remove metainfo
+#         test_mode=True,
+#         pipeline=test_pipeline))
+
+test_dataloader = dict(
+    batch_size=1,
+    num_workers=2,
+    persistent_workers=True,
+    # Now we support two ways to test, image_based and video_based
+    # if you want to use video_based sampling, you can use as follows
+    # sampler=dict(type='DefaultSampler', shuffle=False, round_up=False),
+    sampler=dict(type='TrackImgSampler'),  # image-based sampling
+    dataset=dict(
+        type=dataset_type,
+        data_root=data_root,
+        ann_file='annotations/test_cocoformat.json',
+        data_prefix=dict(img_path='test'),
+        test_mode=True,
+        pipeline=test_pipeline))
+
+
+# test_evaluator = dict(
+#     type='MOTChallengeMetrics',
+#     postprocess_tracklet_cfg=[
+#         dict(type='InterpolateTracklets', min_num_frames=5, max_num_frames=20)
+#     ],
+#     format_only=True,s
+#     outfile_prefix='./mot_17_test_res_deeps')

@@ -12,45 +12,9 @@ In this work, we propose the Positional-Aware Multi-Scale Tracker (PM-Track) to 
 We evaluate PM-Track on standard MOT benchmarks and related Re-ID tasks. Experimental results demonstrate that PM-Track achieves state-of-the-art performance, with 64.6 HOTA on MOT17, 63.2 HOTA on MOT20, and 53.1 HOTA on DanceTrack, while delivering competitive results in Re-ID tasks.
 
 
-# Models
+# Installation
+For detailed installation instructions, please see [Installation Instructions](./docs/installation.md).
 
-## Detector
-
-|  Backbone  | size | Mem (GB) | box AP |                  Config                  |                                                                                                                                         Download                                                                                                                                         |
-| :--------: | :--: | :------: | :----: | :--------------------------------------: | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------: |
-|  YOLOX-l   | 640  |   19.9   |  49.4  |  [config](./yolox_l_8xb8-300e_coco.py)   |       [model](https://download.openmmlab.com/mmdetection/v2.0/yolox/yolox_l_8x8_300e_coco/yolox_l_8x8_300e_coco_20211126_140236-d3bd2b23.pth)      |
-|  YOLOX-x   | 640  |   28.1   |  50.9  |  [config](./yolox_x_8xb8-300e_coco.py)   |       [model](https://download.openmmlab.com/mmdetection/v2.0/yolox/yolox_x_8x8_300e_coco/yolox_x_8x8_300e_coco_20211126_140254-1ef88d67.pth)      |
-
-**Note:**
- In this project we use the [YOLOX](https://arxiv.org/abs/2107.08430) pretrained models from [MMDetection](https://github.com/open-mmlab/mmdetection/tree/main/configs/yolox) without additional traning.
-
-
-
-# Running 
-## Install 
-
-We implement PDTrack based on [MMDectection](https://github.com/open-mmlab/mmdetection) and [MMCV](https://github.com/open-mmlab/mmcv). 
-
-**Step 0.** Install [MMEngie](https://github.com/open-mmlab/mmengine) and [MMCV](https://github.com/open-mmlab/mmcv) using [MIM](https://github.com/open-mmlab/mim):
-```
-pip install -U openmim
-mim install mmengine
-mim install "mmcv>=2.0.0"
-```
-
-**Step 1.** Install PMTrack.
-
-Install the project to local environment.
-
-```bash
-git clone https://github.com/kuaizhiyan/PMTrack.git
-cd PMTrack
-pip install -v -e . -r requirements/tracking.txt
-```
-**Step 2.** Install TrackEval.
-```
-pip install git+https://github.com/JonathonLuiten/TrackEval.git
-```
 
 ## Data 
 
@@ -93,35 +57,12 @@ PDTrack
 │   │
 ```
 
-## Training 
+# Usage
+For detailed instructions on training and testing the model, please refer to [Usage Instructions](./docs/usage.md).
+
+# Models
 
 
-Train FARE with 1 GPU on MOT17:
-```
-python tools/train.py ./configs/reid_pmnet_4xb32_14000iter_mot17train80_test-mot17val20.py --work-dir ./experiments
-```
-
-
-Train FARE with 4 GPUs on MOT17:
-```
-sh tools/dist_train.sh ./configs/reid_pmnet_4xb32_14000iter_mot17train80_test-mot17val20.py 4 --work-dir ./experiments
-```
-
-Train FARE with 4 GPUs on MOT20:
-```
-sh tools/dist_train.sh ./configs/reid_pmnet_4xb32_14000iter_mot20train80_test-mot20val20.py 4 --work-dir ./experiments
-```
-
-Train extral detector with 8 GPUs on crowdhuman:
-```
-sh tools/dist_train.sh configs/strongsort/yolox_x_8xb4-80e_crowdhuman-mot17halftrain_test-mot17halfval.py 8 --work-dir ./experiments
-```
-
-<!-- ## Testing
-Test on MOT17-half:
-```
-sh tools/dist_test.sh  projects/configs/xxxxxx 8 --eval bbox
-``` -->
 
 # Cite
 

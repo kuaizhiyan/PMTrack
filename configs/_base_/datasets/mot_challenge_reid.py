@@ -19,6 +19,7 @@ train_pipeline = [
                 keep_ratio=False,
                 clip_object_border=False),
             dict(type='RandomFlip', prob=0.5, direction='horizontal'),
+            dict(type='MMGEA',probability=0.5),
         ]),
     dict(type='PackReIDInputs', meta_keys=('flip', 'flip_direction'))
 ]

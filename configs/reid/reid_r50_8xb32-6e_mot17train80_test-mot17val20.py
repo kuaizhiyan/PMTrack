@@ -55,7 +55,19 @@ param_scheduler = [
         gamma=0.1)
 ]
 
+train_dataloader = dict(
+    sampler=dict(type='InfiniteSampler'),
+    dataset=dict(
+        triplet_sampler=dict(num_ids=32, ins_per_id=4),
+))
+
 # train, val, test setting
-train_cfg = dict(type='EpochBasedTrainLoop', max_epochs=6, val_interval=1)
+# train_cfg = dict(type='EpochBasedTrainLoop', max_epochs=6, val_interval=1)
+log_processor = dict(by_epoch=False)
+train_cfg = dict(
+    type='IterBasedTrainLoop',
+    max_iters=140000,
+    val_interval=2000,
+)
 val_cfg = dict(type='ValLoop')
 test_cfg = dict(type='TestLoop')

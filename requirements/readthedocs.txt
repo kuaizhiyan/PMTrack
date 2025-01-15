@@ -1,6 +1,7 @@
-mmcv>=2.0.0rc4,<2.2.0
-mmengine>=0.7.1,<1.0.0
+mmcv==2.0.1
+mmengine==0.9.0
+mmpretrain==1.2.0
 scipy
-torch
+torch>=1.12.1
 torchvision
 urllib3<2.0.0

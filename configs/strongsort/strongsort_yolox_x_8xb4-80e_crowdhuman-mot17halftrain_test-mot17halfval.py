@@ -2,6 +2,8 @@ _base_ = [
     './yolox_x_8xb4-80e_crowdhuman-mot17halftrain_test-mot17halfval.py',  # noqa: E501
 ]
 
+data_root=_base_.data_root,
+#         ann_file='annotations/test_cocoformat.json',
 dataset_type = 'MOTChallengeDataset'
 detector = _base_.model
 detector.pop('data_preprocessor')
@@ -102,7 +104,37 @@ val_dataloader = dict(
         # when you evaluate track performance, you need to remove metainfo
         test_mode=True,
         pipeline=test_pipeline))
-test_dataloader = val_dataloader
+
+# test_dataloader = dict(
+#     batch_size=1,
+#     num_workers=2,
+#     persistent_workers=True,
+#     # Now we support two ways to test, image_based and video_based
+#     # if you want to use video_based sampling, you can use as follows
+#     # sampler=dict(type='DefaultSampler', shuffle=False, round_up=False),
+#     sampler=dict(type='TrackImgSampler'),  # image-based sampling
+#     dataset=dict(
+#         type=dataset_type,
+#         data_root=data_root,
+#         ann_file='annotations/test_cocoformat.json',
+#         data_prefix=dict(img_path='test'),
+#         test_mode=True,
+#         pipeline=test_pipeline))
+test_dataloader = dict(
+    # Now StrongSORT only support video_based sampling
+    sampler=dict(type='DefaultSampler', shuffle=False, round_up=False),
+    dataset=dict(
+        _delete_=True,
+        # batch_size=1,  # 适当调整批量大小
+        # num_workers=2,  # 适当调整线程数
+        # persistent_workers=False,  # 避免在多线程环境下占用显存
+        type=dataset_type,
+        data_root=_base_.data_root,
+        ann_file='annotations/test_cocoformat.json',
+        data_prefix=dict(img_path='test'),
+        # when you evaluate track performance, you need to remove metainfo
+        test_mode=True,
+        pipeline=test_pipeline))
 
 train_cfg = None
 optim_wrapper = None
@@ -122,7 +154,22 @@ val_evaluator = dict(
             use_gsi=True,
             smooth_tau=10)
     ])
-test_evaluator = val_evaluator
+test_evaluator = dict(
+    _delete_=True,
+    type='MOTChallengeMetric',
+    metric=['HOTA', 'CLEAR', 'Identity'],
+    # use_postprocess to support AppearanceFreeLink in val_evaluator
+    use_postprocess=True,
+    postprocess_tracklet_cfg=[
+        dict(
+            type='InterpolateTracklets',
+            min_num_frames=5,
+            max_num_frames=20,
+            use_gsi=True,
+            smooth_tau=10)
+    ],
+    format_only=True,
+    outfile_prefix='./strongsort_mot17')
 
 default_hooks = dict(logger=dict(type='LoggerHook', interval=1))
 

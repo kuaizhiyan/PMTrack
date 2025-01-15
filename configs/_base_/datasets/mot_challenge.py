@@ -82,9 +82,32 @@ val_dataloader = dict(
         data_prefix=dict(img_path='train'),
         test_mode=True,
         pipeline=test_pipeline))
-test_dataloader = val_dataloader
+# test_dataloader = val_dataloader
+test_dataloader = dict(
+    batch_size=1,
+    num_workers=2,
+    persistent_workers=True,
+    # Now we support two ways to test, image_based and video_based
+    # if you want to use video_based sampling, you can use as follows
+    # sampler=dict(type='DefaultSampler', shuffle=False, round_up=False),
+    sampler=dict(type='TrackImgSampler'),  # image-based sampling
+    dataset=dict(
+        type=dataset_type,
+        data_root=data_root,
+        ann_file='annotations/test_cocoformat.json',
+        data_prefix=dict(img_path='test'),
+        test_mode=True,
+        pipeline=test_pipeline))
 
 # evaluator
 val_evaluator = dict(
-    type='MOTChallengeMetric', metric=['HOTA', 'CLEAR', 'Identity'])
-test_evaluator = val_evaluator
+    type='MOTChallengeMetric', metric=['HOTA', 'CLEAR', 'Identity'],
+    )
+# test_evaluator = val_evaluator
+test_evaluator = dict(
+    type='MOTChallengeMetric',
+    postprocess_tracklet_cfg=[
+        dict(type='InterpolateTracklets', min_num_frames=5, max_num_frames=20)
+    ],
+    format_only=True,
+    outfile_prefix='./mot_17_test_res')
