@@ -61,10 +61,20 @@ PDTrack
 For detailed instructions on training and testing the model, please refer to [Usage Instructions](./docs/usage.md).
 
 # Models
-
+For a detailed list of models and their corresponding weights, please refer to [modelzoo.md](./docs/modelzoo.md).
 
 
 # Cite
+```bibtex
+@article{kuai2025pmtrack,
+  title={Positional-Aware Multi-Scale Tracking with Fine-Grained Appearance Modeling for Multi-Object Tracking},
+  author={Kuai, Zhiyan and Song, YuZe and Liu, Tao and Gu, Yanzhen and Xu, Gang and He, Shuangyan and Yefei,Bai and Li, Peiliang and Huang, Hui},
+  journal={The Visual Computer},
+  year={2025},
+  pages={1--27},
+}
+
+```
 
 # Acknowledgement
 This project is inspired by excellent works such as [StrongSORT](https://github.com/dyhBUPT/StrongSORT), [MMDetection](https://github.com/open-mmlab/mmdetection), [YOLOX](https://github.com/Megvii-BaseDetection/YOLOX), [ConditionalDETR](https://github.com/Atten4Vis/ConditionalDETR), [DINO](https://github.com/IDEA-Research/DINO),etc. Many thanks for their wonderful works.
