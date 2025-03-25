@@ -68,7 +68,7 @@ For a detailed list of models and their corresponding weights, please refer to [
 @article{kuai2025pmtrack,
   title={Positional-Aware Multi-Scale Tracking with Fine-Grained Appearance Modeling for Multi-Object Tracking},
   author={Kuai, Zhiyan and Song, YuZe and Liu, Tao and Gu, Yanzhen and Xu, Gang and He, Shuangyan and Yefei,Bai and Li, Peiliang and Huang, Hui},
-  journal={The Visual Computer},
+  journal={Applied Intelligence},
   year={2025},
   pages={1--27},
 }
